@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState } from "react";
 import { Pencil, Check } from "lucide-react";
@@ -85,20 +86,20 @@ export default function ProfileForm({ profile, setProfile }: Props) {
                   <button
                     onClick={() => handleSave(key)}
                     disabled={loading}
-                    className="text-green-600 hover:text-green-700 transition disabled:opacity-50"
-                  >
+                    className="text-green-600 hover:text-green-700 transition disabled:opacity-50">
                     <Check className="w-5 h-5" />
                   </button>
                 </>
               ) : (
                 <>
                   <p className="flex-1 text-gray-800 bg-gray-50 border rounded-lg px-3 py-2 hover:bg-gray-100 transition">
-                    {value || <span className="text-gray-400 italic">Empty</span>}
+                    {value || (
+                      <span className="text-gray-400 italic">Empty</span>
+                    )}
                   </p>
                   <button
                     onClick={() => handleEdit(key)}
-                    className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-700 transition"
-                  >
+                    className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-700 transition">
                     <Pencil className="w-5 h-5" />
                   </button>
                 </>

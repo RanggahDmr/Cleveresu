@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,7 +8,7 @@ import ProfileForm from "@/components/profile/ProfileForm";
 import ExperienceSection from "@/components/profile/ExperienceForm";
 import SkillForm from "@/components/profile/SkillForm";
 import { User, Briefcase, Lightbulb, GraduationCap } from "lucide-react";
-import api from "@/lib/axios"; 
+import api from "@/lib/axios";
 import { usePrivateRoute } from "@/lib/auth";
 import ProfileEducation from "@/components/profile/ProfileEducation";
 
@@ -30,7 +31,7 @@ export default function ProfilePage() {
     email: "",
     desc: "",
     birthdate: "",
-    photo_profile:"",
+    photo_profile: "",
   });
 
   const [skills, setSkills] = useState<string[]>([
@@ -65,7 +66,7 @@ export default function ProfilePage() {
           email: data.email || "",
           desc: data.desc || "",
           birthdate: data.birthdate || "",
-          photo_profile: data.photo_profile || ""
+          photo_profile: data.photo_profile || "",
         };
 
         setProfile(mappedProfile);
@@ -101,9 +102,11 @@ export default function ProfilePage() {
 
           <div className="flex flex-col md:flex-row gap-10 items-start">
             <div className="md:w-1/3 flex flex-col items-center">
-              <ProfileAvatar 
-               photo={profile.photo_profile}
-              setPhoto={(url) => setProfile({ ...profile, photo_profile: url })}
+              <ProfileAvatar
+                photo={profile.photo_profile}
+                setPhoto={(url) =>
+                  setProfile({ ...profile, photo_profile: url })
+                }
               />
             </div>
             <div className="md:w-2/3">
@@ -112,13 +115,11 @@ export default function ProfilePage() {
           </div>
         </section>
 
-          {/*Education Section */}
+        {/*Education Section */}
         <section className="bg-white shadow-lg rounded-2xl p-8 md:p-10 mb-10 border border-gray-100">
           <div className="flex items-center gap-3 mb-6">
             <GraduationCap className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-800">
-              Education
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-800">Education</h2>
           </div>
           <ProfileEducation />
         </section>

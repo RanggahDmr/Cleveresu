@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState } from "react";
 import { Upload, User } from "lucide-react";
@@ -49,7 +50,11 @@ export default function ProfileAvatar({ photo, setPhoto }: Props) {
     <div className="flex flex-col items-center">
       <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex justify-center items-center shadow-inner mb-3">
         {photo ? (
-          <img src={photo} alt="Profile" className="object-cover w-full h-full" />
+          <img
+            src={photo}
+            alt="Profile"
+            className="object-cover w-full h-full"
+          />
         ) : (
           <User className="w-12 h-12 text-gray-400" />
         )}
