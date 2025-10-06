@@ -2,9 +2,10 @@
 
 import Navbar from "@/components/Navbar";
 import { useRouter } from "next/navigation";
+import { usePrivateRoute } from "@/lib/auth";
 
 export default function DashboardPage() {
-
+  // usePrivateRoute();
   const router = useRouter();
   const handleCreate = () => {
     router.push("create-resume");

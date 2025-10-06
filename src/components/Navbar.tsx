@@ -3,14 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { logout } from "@/lib/auth";
 
 export default function Navbar() {
   const pathname = usePathname();
-
+  const router = useRouter();
   const menus = [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Profile", href: "/profile" },
   ];
+  
+ 
 
   return (
     <nav className="w-full bg-white shadow-md ">
@@ -42,7 +46,9 @@ export default function Navbar() {
           ))}
 
           {/* Logout */}
-          <button className="ml-4 px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition">
+          <button 
+          onClick={() => logout(router)}
+          className="ml-4 px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition">
             Logout
           </button>
         </div>

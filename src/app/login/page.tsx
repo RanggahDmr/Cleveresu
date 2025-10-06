@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import api from "@/lib/axios";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets:["latin"],
@@ -18,22 +19,35 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false);
 
   const  handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
 
-  const res = await fetch("http://localhost:8081/api/v1/auth/login", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ email, password }),
-  });
 
-      if (res.ok) {
-        router.push("/dashboard");
-      } else {
-        alert("Login gagal!");
-      }
-        }
+  try {
+      const res = await api.post("/auth/login", { email, password });
+      const token = res.data.data.token; // ambil dari object data
+
+
+
+      console.log("Login success:", res.data);
+      
+      
+      localStorage.setItem("token", token);
+
+      
+      router.push("/dashboard");
+    } catch (err: any) {
+      console.error("Login error:", err);
+      const message =
+        err.response?.data?.message || "Gagal login, periksa kembali data Anda.";
+      alert(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex font-jakarta">
