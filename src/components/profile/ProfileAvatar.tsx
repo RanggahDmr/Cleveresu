@@ -7,23 +7,41 @@ import api from "@/lib/axios";
 interface Props {
   photo: string;
   setPhoto: (url: string) => void;
+  profile: {
+    full_name: string;
+    address: string;
+    gender: string;
+    desc: string;
+    birthdate: string;
+  };
+  setProfile: (p: any) => void;
 }
 
-export default function ProfileAvatar({ photo, setPhoto }: Props) {
+export default function ProfileAvatar({
+  photo,
+  setPhoto,
+  profile,
+  setProfile,
+}: Props) {
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Preview dulu
+    // preview dulu
     const reader = new FileReader();
     reader.onload = () => setPhoto(reader.result as string);
     reader.readAsDataURL(file);
 
-    // Upload ke backend
+    // kirim semua field (biar backend gak overwrite null)
     const formData = new FormData();
     formData.append("photo_profile", file);
+    formData.append("full_name", profile.full_name || "");
+    formData.append("address", profile.address || "");
+    formData.append("gender", profile.gender || "");
+    formData.append("desc", profile.desc || "");
+    formData.append("birthdate", profile.birthdate || "");
 
     try {
       setUploading(true);
@@ -36,11 +54,17 @@ export default function ProfileAvatar({ photo, setPhoto }: Props) {
       });
 
       console.log(" Foto berhasil diupload:", res.data);
+
       if (res.data?.data?.photo_profile) {
-        setPhoto(res.data.data.photo_profile); // Update state global
+        // update state global di FE
+        setPhoto(res.data.data.photo_profile);
+        setProfile({
+          ...profile,
+          photo_profile: res.data.data.photo_profile,
+        });
       }
     } catch (err: any) {
-      console.error(" Upload gagal:", err);
+      console.error(" Upload gagal:", err.response?.data || err.message);
     } finally {
       setUploading(false);
     }
@@ -48,7 +72,7 @@ export default function ProfileAvatar({ photo, setPhoto }: Props) {
 
   return (
     <div className="flex flex-col items-center">
-      <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex justify-center items-center shadow-inner mb-3">
+      <div className="w-75 h-75 rounded-4xl overflow-hidden bg-gray-200 flex justify-center items-center mt-20 shadow-inner mb-3">
         {photo ? (
           <img
             src={photo}
@@ -59,6 +83,7 @@ export default function ProfileAvatar({ photo, setPhoto }: Props) {
           <User className="w-12 h-12 text-gray-400" />
         )}
       </div>
+
       <label className="cursor-pointer bg-blue-600 text-white text-sm px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition">
         <Upload className="w-4 h-4" />
         {uploading ? "Uploading..." : "Upload Photo"}

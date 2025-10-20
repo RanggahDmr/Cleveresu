@@ -1,36 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
-
-<<<<<<< Updated upstream
-
-//respon BE "id": "94f3d75f-25cb-4da9-9db6-1458b949c5e8",
-            // "user_id": "b2b707c6-38df-4e5c-bc6a-9c57628cc35e",
-            // "start_at": "2025-10-04T13:50:00.000Z",
-            // "end_at": "2025-10-04T13:50:00.000Z",
-            // "place": "SMA Suzuran",
-            // "desc": "Pernah menjadi ketua geng, membunuh raja iblis",
-            // "type": "formal",
-            // "certificate": null,
-            // "created_at": "2025-10-06T03:15:06.566Z",
-            // "updated_at": "2025-10-06T03:15:06.566Z"
-=======
-
-function formatDate(isoString: string): string {
-  const date = new Date(isoString);
-
-  // Pastikan tanggal valid
-  if (isNaN(date.getTime())) {
-    throw new Error("Invalid date format");
-  }
-
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-
-  return `${day}/${month}/${year}`;
-}
+import { useEffect, useState } from "react";
+import { Plus, Trash2, Loader2, Upload } from "lucide-react";
+import api from "@/lib/axios";
+// import { showSuccess, showError } from "@/lib/toastHelper";
+import toast from "react-hot-toast";
 
 type Education = {
   id?: string;
@@ -53,95 +27,218 @@ export default function ProfileEducation() {
     desc: "",
     type: "formal",
   });
-
-
-  
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
->>>>>>> Stashed changes
 
-            
+  // Fetch data awal
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await api.get("/education");
+        setEducations(res.data.data || []);
+      } catch (err) {
+        console.error("Error fetching educations:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
-export default function ExperienceSection() {
-  const [experiences, setExperiences] = useState([
-    { company: "PT Dumbways Indonesia", position: "Frontend Developer", years: "2023 - 2024" },
-  ]);
-
-  const [newExp, setNewExp] = useState({ company: "", position: "", years: "" });
-
-  const handleAdd = (e: React.FormEvent) => {
+  // Tambah Education
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newExp.company || !newExp.position || !newExp.years) return;
-    setExperiences([...experiences, newExp]);
-    setNewExp({ company: "", position: "", years: "" });
+    if (!newEdu.place || !newEdu.start_at || !newEdu.desc) 
+      
+      return;
+    setSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append("place", newEdu.place);
+      formData.append("start_at", newEdu.start_at);
+      formData.append("end_at", newEdu.end_at || "");
+      formData.append("desc", newEdu.desc);
+      formData.append("type", newEdu.type);
+      if (certificateFile) formData.append("certificate", certificateFile);
+
+      const res = await api.post("/education", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const newData = res.data.data?.new_education || res.data.data;
+      setEducations([...educations, newData]);
+      setNewEdu({
+        place: "",
+        start_at: "",
+        end_at: "",
+        desc: "",
+        type: "formal",
+      });
+      setCertificateFile(null);
+      //  showSuccess("Saved");
+    } catch (err) {
+      console.error("Error adding education:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (index: number) => {
-    setExperiences(experiences.filter((_, i) => i !== index));
+  // Update inline
+ const handleUpdate = async (id: string, field: keyof Education, value: string) => {
+  try {
+    const edu = educations.find((e) => e.id === id);
+    if (!edu) return;
+
+    const updated = { ...edu, [field]: value };
+
+    const formData = new FormData();
+    formData.append("id", id);
+    formData.append("place", updated.place);
+    formData.append("start_at", updated.start_at);
+    formData.append("end_at", updated.end_at);
+    formData.append("desc", updated.desc);
+    formData.append("type", updated.type);
+
+    // hanya tambahkan certificate kalau ada file baru
+    if (updated.certificate && typeof updated.certificate !== "string") {
+      formData.append("certificate", updated.certificate);
+    }
+
+    console.log(" PATCH FormData:", Object.fromEntries(formData.entries()));
+
+    const res = await api.patch("/education", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    const newData = res.data.data?.updated_education || res.data.data;
+    setEducations((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, ...newData } : e))
+    );
+
+    // showSuccess("Saved");
+  } catch (err: any) {
+    console.error("Error updating education:", err);
+    const msg =
+      err.response?.data?.message || "Gagal memperbarui data pendidikan ❌";
+    // showError(msg);
+  }
+};
+
+  // Upload Certificate
+  const handleUploadCertificate = async (id: string, file?: File) => {
+    if (!file) return;
+    const edu = educations.find((e) => e.id === id);
+    if (!edu) return;
+    const formData = new FormData();
+    formData.append("id", id);
+    formData.append("certificate", file);
+    formData.append("place", edu.place);
+    formData.append("start_at", edu.start_at);
+    formData.append("end_at", edu.end_at);
+    formData.append("desc", edu.desc);
+    formData.append("type", edu.type);
+
+    try {
+      const res = await api.patch("/education", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const updatedCert = res.data?.data?.updated_education?.certificate;
+      setEducations((prev) =>
+        prev.map((e) =>
+          e.id === id ? { ...e, certificate: updatedCert || null } : e
+        )
+      );
+    } catch (err) {
+      console.error("Error uploading certificate:", err);
+    }
   };
+
+  // Delete (pakai body.id)
+  const handleDelete = async (id?: string) => {
+    if (!id) return;
+    try {
+      await api.delete("/education", { data: { id } });
+      setEducations((prev) => prev.filter((e) => e.id !== id));
+       toast.success("Deleted successfully ");
+    } catch (err) {
+      console.error("Error deleting education:", err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-8 text-gray-500">
+        <Loader2 className="animate-spin w-5 h-5 mr-2" />
+        Loading educations...
+      </div>
+    );
+  }
 
   return (
-    <section>
+    <section className="bg-white rounded-2xl p-6 shadow border border-gray-100">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-lg font-semibold text-gray-800">Experience</h2>
+        <h2 className="text-lg font-semibold text-gray-800">Education</h2>
       </div>
 
+      {/* Form tambah */}
       <form
         onSubmit={handleAdd}
-        className="flex flex-col md:flex-row gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6"
+        className="flex flex-col md:flex-row flex-wrap gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6"
       >
         <input
-          placeholder="Place"
-          value={newExp.company}
-          onChange={(e) => setNewExp({ ...newExp, company: e.target.value })}
-          className="border rounded-md px-3 py-2 flex-1 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          placeholder="Institution / Place"
+          value={newEdu.place}
+          onChange={(e) => setNewEdu({ ...newEdu, place: e.target.value })}
+          className="border rounded-md px-3 py-2 flex-1 min-w-[200px] text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
         <input
-          placeholder="Start at"
-          value={newExp.position}
-          onChange={(e) => setNewExp({ ...newExp, position: e.target.value })}
-          className="border rounded-md px-3 py-2 flex-1 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        /> <br />
-        <input
-          placeholder="End at"
-          value={newExp.position}
-          onChange={(e) => setNewExp({ ...newExp, position: e.target.value })}
-          className="border rounded-md px-3 py-2 flex-1 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          type="date"
+          value={newEdu.start_at}
+          onChange={(e) => setNewEdu({ ...newEdu, start_at: e.target.value })}
+          className="border rounded-md px-3 py-2 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
         <input
-          placeholder="desc"
-          value={newExp.years}
-          onChange={(e) => setNewExp({ ...newExp, years: e.target.value })}
-          className="border rounded-md px-3 py-2 flex-1 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          type="date"
+          value={newEdu.end_at}
+          onChange={(e) => setNewEdu({ ...newEdu, end_at: e.target.value })}
+          className="border rounded-md px-3 py-2 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
+        <select
+          value={newEdu.type}
+          onChange={(e) =>
+            setNewEdu({ ...newEdu, type: e.target.value as "formal" | "nonformal" })
+          }
+          className="border rounded-md px-3 py-2 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        >
+          <option value="formal">Formal</option>
+          <option value="nonformal">Non Formal</option>
+        </select>
+        <input
+          placeholder="Description"
+          value={newEdu.desc}
+          onChange={(e) => setNewEdu({ ...newEdu, desc: e.target.value })}
+          className="border rounded-md px-3 py-2 flex-[2] text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        />
+        <label className="flex items-center gap-2 text-sm text-blue-600 cursor-pointer">
+          <Upload className="w-4 h-4" />
+          Upload Certificate
+          <input
+            type="file"
+            accept=".jpg,.jpeg,.png,.pdf"
+            className="hidden"
+            onChange={(e) => setCertificateFile(e.target.files?.[0] || null)}
+          />
+        </label>
         <button
           type="submit"
-          className="flex items-center justify-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+          disabled={saving}
+          className="flex items-center justify-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-60"
         >
-          <Plus className="w-4 h-4" /> Add
+          {saving ? <Loader2 className="animate-spin w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          Add
         </button>
       </form>
 
+      {/*  List Education */}
       <ul className="space-y-3">
-<<<<<<< Updated upstream
-        {experiences.map((exp, index) => (
-          <li
-            key={index}
-            className="p-4 bg-white rounded-lg shadow border border-gray-100 flex justify-between items-center"
-          >
-            <div>
-              <p className="font-semibold text-gray-800">{exp.company}</p>
-              <p className="text-sm text-gray-600">{exp.position}</p>
-              <p className="text-xs text-gray-500">{exp.years}</p>
-            </div>
-            <button
-              onClick={() => handleDelete(index)}
-              className="text-red-600 hover:text-red-800 flex items-center gap-1"
-            >
-              <Trash2 className="w-4 h-4" /> Delete
-            </button>
-          </li>
-        ))}
-=======
   {educations.length === 0 && (
     <p className="text-gray-500 text-sm italic">No educations yet.</p>
   )}
@@ -173,7 +270,7 @@ export default function ExperienceSection() {
         {/* Dates */}
         <div className="text-xs text-gray-500 mt-1">
           <span>
-            {formatDate(edu.start_at)} - {formatDate(edu.end_at)}
+            {edu.start_at} - {edu.end_at}
           </span>
         </div>
 
@@ -227,8 +324,8 @@ export default function ExperienceSection() {
       </button>
     </li>
   ))}
->>>>>>> Stashed changes
       </ul>
+
     </section>
   );
 }

@@ -1,23 +1,46 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Trash2, Loader2 } from "lucide-react";
+import api from "@/lib/axios";
+import toast from "react-hot-toast";
+// import { showSuccess } from "@/lib/toastHelper";
 
-interface SkillFormProps {
-  skills: string[];
-  setSkills: (data: string[]) => void;
-}
+type Skill = {
+  id?: string;
+  name: string;
+  desc: string;
+  type: string;
+};
 
-export default function SkillForm({ skills, setSkills }: SkillFormProps) {
-  const [newSkill, setNewSkill] = useState("");
+export default function SkillSection() {
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [newSkill, setNewSkill] = useState<Skill>({
+    name: "",
+    desc: "",
+    type: "technical",
+  });
 
-  const handleAdd = (e: React.FormEvent) => {
+  //  Fetch data awal
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await api.get("/skill");
+        setSkills(res.data.data || []);
+      } catch (err) {
+        console.error("Error fetching skills:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  //  Tambah skill
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-<<<<<<< Updated upstream
-    if (!newSkill.trim()) return;
-    setSkills([...skills, newSkill]);
-    setNewSkill("");
-=======
     if (!newSkill.name || !newSkill.desc) return;
     setSaving(true);
     try {
@@ -27,85 +50,113 @@ export default function SkillForm({ skills, setSkills }: SkillFormProps) {
         desc: newSkill.desc.trim(),
         type: newSkill.type.trim(),
       };
-        const res = await api.post("/skill", payload);
-      const newData = res.data.data;
+     const res = await api.post("/skill", payload);
+const newData = res.data.data;
 
-      if (newData && newData.id) {
-        setSkills((prev) => [...prev, newData]);
-      } else {
-        // fallback kalau backend gak return data skill lengkap
-        const refreshed = await api.get("/skill");
-        setSkills(refreshed.data.data || []);
-      }
+if (newData && newData.id) {
+  setSkills((prev) => [...prev, newData]);
+} else {
+  // fallback kalau backend gak return data skill lengkap
+  const refreshed = await api.get("/skill");
+  setSkills(refreshed.data.data || []);
+}
+
+setNewSkill({ name: "", desc: "", type: "technical" });
+// showSuccess("Saved");
 
       setNewSkill({ name: "", desc: "", type: "technical" });
-      showSuccess("Saved");
-
-
-      setNewSkill({ name: "", desc: "", type: "technical" });
-       showSuccess("Saved");
+      //  showSuccess("Saved");
     } catch (err) {
       console.error("Error adding skill:", err);
     } finally {
       setSaving(false);
     }
->>>>>>> Stashed changes
   };
 
-  const handleDelete = (index: number) => {
-    setSkills(skills.filter((_, i) => i !== index));
-  };
+  
+  const handleUpdate = async (id: string, field: keyof Skill, value: string) => {
+  try {
+    const skill = skills.find((s) => s.id === id);
+    if (!skill) return;
+
+    const { user_id, created_at, updated_at, ...cleanData } = skill as any;
+    const updated = { ...cleanData, [field]: value };
+
+    
+    await api.patch("/skill", { id, ...updated });
+
+    setSkills((prev) =>
+      prev.map((s) => (s.id === id ? updated : s))
+    );
+  } catch (err) {
+    console.error("Error updating skill:", err);
+  }
+};
+
+
+  //  Delete skill
+ const handleDelete = async (id?: string) => {
+  if (!id) return;
+  try {
+    await api.delete("/skill", { data: { id } });
+    setSkills((prev) => prev.filter((s) => s.id !== id));
+    toast.success("Deleted successfully");
+  } catch (err: any) {
+    console.error("Error deleting skill:", err);
+    const message = err.response?.data?.message || "Failed to delete ";
+    toast.error(message);
+  }
+};
+  //  Loading UI
+  if (loading) {
+    return (
+      <div className="flex justify-center py-8 text-gray-500">
+        <Loader2 className="animate-spin w-5 h-5 mr-2" />
+        Loading skills...
+      </div>
+    );
+  }
 
   return (
-    <section className="bg-white shadow-lg rounded-2xl p-8 border border-gray-100">
-      {/* Judul */}
-      <div className="flex items-center justify-between mb-6">
+    <section className="bg-white rounded-2xl p-6 shadow border border-gray-100">
+      <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-semibold text-gray-800">Skills</h2>
       </div>
 
-      {/* Daftar skills */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {skills.length > 0 ? (
-          skills.map((skill, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-1 bg-blue-50 text-blue-800 px-3 py-1.5 rounded-full border border-blue-200 shadow-sm hover:bg-blue-100 transition"
-            >
-              <span className="text-sm font-medium">{skill}</span>
-              <button
-                type="button"
-                onClick={() => handleDelete(index)}
-                className="hover:text-red-500 transition"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-500 italic">No skills added yet</p>
-        )}
-      </div>
-
-      {/* Input tambah skill */}
+      {/*  Form tambah skill */}
       <form
         onSubmit={handleAdd}
-        className="flex flex-col md:flex-row gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200"
+        className="flex flex-col md:flex-row flex-wrap gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6"
       >
         <input
-          value={newSkill}
-          onChange={(e) => setNewSkill(e.target.value)}
-          placeholder="Add a new skill..."
-          className="border rounded-md px-3 py-2 flex-1 text-gray-900 bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          placeholder="Skill name"
+          value={newSkill.name}
+          onChange={(e) => setNewSkill({ ...newSkill, name: e.target.value })}
+          className="border rounded-md px-3 py-2 flex-1 min-w-[200px] text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        />
+        <select
+          value={newSkill.type}
+          onChange={(e) => setNewSkill({ ...newSkill, type: e.target.value })}
+          className="border rounded-md px-3 py-2 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        >
+          <option value="technical">Technical</option>
+          <option value="softskill">Soft Skill</option>
+        </select>
+        <input
+          placeholder="Description"
+          value={newSkill.desc}
+          onChange={(e) => setNewSkill({ ...newSkill, desc: e.target.value })}
+          className="border rounded-md px-3 py-2 flex-[2] text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
         <button
           type="submit"
-          className="flex items-center justify-center gap-1 bg-blue-600 text-white px-5 py-2 rounded-md font-medium hover:bg-blue-700 shadow-sm transition"
+          disabled={saving}
+          className="flex items-center justify-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-60"
         >
-          <Plus className="w-4 h-4" /> Add
+          {saving ? <Loader2 className="animate-spin w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          Add
         </button>
       </form>
-<<<<<<< Updated upstream
-=======
 
       {/*  List skills */}
       <ul className="space-y-3">
@@ -114,7 +165,7 @@ export default function SkillForm({ skills, setSkills }: SkillFormProps) {
         )}
         {skills.map((skill, index) => (
           <li
-            key={skill.id || `temp-${index}`} //re-render
+            key={skill.id || `temp-${index}`}
             className="p-4 bg-gray-50 rounded-xl border border-gray-200 flex justify-between items-start"
           >
             <div className="flex-1">
@@ -148,7 +199,6 @@ export default function SkillForm({ skills, setSkills }: SkillFormProps) {
           </li>
         ))}
       </ul>
->>>>>>> Stashed changes
     </section>
   );
 }

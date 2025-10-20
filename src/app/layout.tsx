@@ -18,13 +18,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${jakarta.variable} font-sans`}>
-<<<<<<< Updated upstream
-        {children}
-      <Toaster position="bottom-right"/>      </body>
-=======
         <Providers>{children}</Providers>
       </body>
->>>>>>> Stashed changes
     </html>
   );
 }

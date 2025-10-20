@@ -1,14 +1,10 @@
 "use client";
 
-<<<<<<< Updated upstream
-import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
-=======
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Loader2, Upload } from "lucide-react";
 import api from "@/lib/axios";
 import toast from "react-hot-toast";
-import { showSuccess } from "@/lib/toastHelper";
+
 
 
 function formatDate(isoString: string): string {
@@ -36,48 +32,187 @@ type Experience = {
   desc?: string;
   certificate?: string | null;
 };
->>>>>>> Stashed changes
 
 export default function ExperienceSection() {
-  const [experiences, setExperiences] = useState([
-    { company: "PT Dumbways Indonesia", position: "Frontend Developer", years: "2023 - 2024" },
-  ]);
+  const [experiences, setExperiences] = useState<Experience[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [newExp, setNewExp] = useState<Experience>({
+    place: "",
+    position: "",
+    start_at: "",
+    end_at: "",
+    desc: "",
+  });
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
 
-  const [newExp, setNewExp] = useState({ company: "", position: "", years: "" });
+  // Helper: konversi tanggal ke ISO format (untuk Prisma)
+  const toISO = (dateStr: string) => {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? null : date.toISOString();
+  };
 
-  const handleAdd = (e: React.FormEvent) => {
+  // Helper: tampilkan ISO date sebagai YYYY-MM-DD di input
+  const formatForInput = (isoDate?: string) => {
+    if (!isoDate) return "";
+    return isoDate.split("T")[0];
+  };
+
+  // Fetch data awal
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await api.get("/experience");
+        setExperiences(res.data.data || []);
+      } catch (err) {
+        console.error("Error fetching experiences:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Tambah Experience
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newExp.company || !newExp.position || !newExp.years) return;
-    setExperiences([...experiences, newExp]);
-    setNewExp({ company: "", position: "", years: "" });
+    if (!newExp.place || !newExp.position || !newExp.start_at) return;
+    setSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append("place", newExp.place);
+      formData.append("position", newExp.position);
+      formData.append("start_at", toISO(newExp.start_at) || "");
+      formData.append("end_at", toISO(newExp.end_at || "") || "");
+      formData.append("desc", newExp.desc || "");
+      if (certificateFile) formData.append("certificate", certificateFile);
+
+      const res = await api.post("/experience", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const newData = res.data.data?.new_experience || res.data.data;
+      setExperiences([...experiences, newData]);
+      setNewExp({
+        place: "",
+        position: "",
+        start_at: "",
+        end_at: "",
+        desc: "",
+      });
+      setCertificateFile(null);
+     
+    } catch (err) {
+      console.error("Error adding experience:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (index: number) => {
-    setExperiences(experiences.filter((_, i) => i !== index));
+  // Update inline
+ const handleUpdate = async (id: string, field: keyof Experience, value: string) => {
+  try {
+    const exp = experiences.find((e) => e.id === id);
+    if (!exp) return;
+
+    const updated = { ...exp, [field]: value };
+
+    const formData = new FormData();
+    formData.append("id", id);
+    formData.append("place", updated.place);
+    formData.append("position", updated.position);
+    formData.append("start_at", toISO(updated.start_at) || "");
+    formData.append("end_at", toISO(updated.end_at || "") || "");
+    formData.append("desc", updated.desc || "");
+
+    const res = await api.patch("/experience", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    const newData = res.data.data?.updated_experience || res.data.data;
+
+    setExperiences((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, ...newData } : e))
+    );
+
+    toast.success("Success");
+  } catch (err: any) {
+    console.error("Error updating experience:", err);
+    toast.error("Failed to update");
+  }
+};
+
+
+  // Upload Certificate
+  const handleUploadCertificate = async (id: string, file?: File) => {
+    if (!file) return;
+    const exp = experiences.find((e) => e.id === id);
+    if (!exp) return;
+
+    const formData = new FormData();
+    formData.append("id", id);
+    formData.append("certificate", file);
+    formData.append("place", exp.place);
+    formData.append("position", exp.position);
+    formData.append("start_at", toISO(exp.start_at) || "");
+    formData.append("end_at", toISO(exp.end_at || "") || "");
+    formData.append("desc", exp.desc || "");
+
+    try {
+      const res = await api.patch("/experience", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const updatedCert = res.data?.data?.updated_experience?.certificate;
+      setExperiences((prev) =>
+        prev.map((e) =>
+          e.id === id ? { ...e, certificate: updatedCert || null } : e
+        )
+      );
+    } catch (err) {
+      console.error("Error uploading certificate:", err);
+    }
   };
+
+  //  Delete (pakai body.id)
+  const handleDelete = async (id?: string) => {
+  if (!id) return;
+  try {
+    await api.delete("/experience", { data: { id } });
+    setExperiences((prev) => prev.filter((e) => e.id !== id));
+    toast.success("Deleted successfully ");
+  } catch (err) {
+    console.error("Error deleting experience:", err);
+    toast.error("Failed to delete ");
+  }
+};
+
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-8 text-gray-500">
+        <Loader2 className="animate-spin w-5 h-5 mr-2" />
+        Loading experiences...
+      </div>
+    );
+  }
 
   return (
-    <section>
+    <section className="bg-white rounded-2xl p-6 shadow border border-gray-100">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-semibold text-gray-800">Experience</h2>
       </div>
 
+      {/*  Form tambah */}
       <form
         onSubmit={handleAdd}
-        className="flex flex-col md:flex-row gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6"
+        className="flex flex-col md:flex-row flex-wrap gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6"
       >
         <input
-<<<<<<< Updated upstream
-          placeholder="Company"
-          value={newExp.company}
-          onChange={(e) => setNewExp({ ...newExp, company: e.target.value })}
-          className="border rounded-md px-3 py-2 flex-1 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-=======
           placeholder="Company / Place"
           value={newExp.place}
           onChange={(e) => setNewExp({ ...newExp, place: e.target.value })}
-          className="border rounded-md px-3 py-2 flex-1 min-w-[100px] text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
->>>>>>> Stashed changes
+          className="border rounded-md px-3 py-2 flex-1 min-w-[00px] text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
         <input
           placeholder="Position"
@@ -86,40 +221,53 @@ export default function ExperienceSection() {
           className="border rounded-md px-3 py-2 flex-1 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
         <input
-          placeholder="Years"
-          value={newExp.years}
-          onChange={(e) => setNewExp({ ...newExp, years: e.target.value })}
-          className="border rounded-md px-3 py-2 flex-1 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          type="date"
+          value={formatForInput(newExp.start_at)}
+          onChange={(e) => setNewExp({ ...newExp, start_at: e.target.value })}
+          className="border rounded-md px-3 py-2 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
+        <input
+          type="date"
+          value={formatForInput(newExp.end_at)}
+          onChange={(e) => setNewExp({ ...newExp, end_at: e.target.value })}
+          className="border rounded-md px-3 py-2 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        />
+        <input
+          placeholder="Description"
+          value={newExp.desc}
+          onChange={(e) => setNewExp({ ...newExp, desc: e.target.value })}
+          className="border rounded-md px-3 py-2 flex-[2] text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        />
+        <label className="flex items-center gap-2 text-sm text-blue-600 cursor-pointer">
+          <Upload className="w-4 h-4" />
+          Upload Certificate
+          <input
+            type="file"
+            accept=".jpg,.jpeg,.png,.pdf"
+            className="hidden"
+            onChange={(e) => setCertificateFile(e.target.files?.[0] || null)}
+          />
+        </label>
         <button
           type="submit"
-          className="flex items-center justify-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+          disabled={saving}
+          className="flex items-center justify-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-60"
         >
-          <Plus className="w-4 h-4" /> Add
+          {saving ? <Loader2 className="animate-spin w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          Add
         </button>
       </form>
 
-<<<<<<< Updated upstream
-      <ul className="space-y-3">
-        {experiences.map((exp, index) => (
-=======
       {/* List Experience */}
       <ul className="space-y-3 ">
         {experiences.length === 0 && (
           <p className="text-gray-500 text-sm italic">No experiences yet.</p>
         )}
         {experiences.map((exp, i) => (
->>>>>>> Stashed changes
           <li
-            key={index}
-            className="p-4 bg-white rounded-lg shadow border border-gray-100 flex justify-between items-center"
+            key={exp.id || `temp-${i}`}
+            className="p-4 bg-gray-50 rounded-xl border border-gray-200 flex justify-between items-start"
           >
-<<<<<<< Updated upstream
-            <div>
-              <p className="font-semibold text-gray-800">{exp.company}</p>
-              <p className="text-sm text-gray-600">{exp.position}</p>
-              <p className="text-xs text-gray-500">{exp.years}</p>
-=======
             <div className="flex-1">
               <input
                 value={exp.place}
@@ -171,11 +319,10 @@ export default function ExperienceSection() {
                   />
                 </label>
               </div>
->>>>>>> Stashed changes
             </div>
             <button
-              onClick={() => handleDelete(index)}
-              className="text-red-600 hover:text-red-800 flex items-center gap-1"
+              onClick={() => handleDelete(exp.id)}
+              className="text-red-600 hover:text-red-800 flex items-center gap-1 ml-3"
             >
               <Trash2 className="w-4 h-4" /> Delete
             </button>
