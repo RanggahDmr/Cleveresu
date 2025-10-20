@@ -70,7 +70,9 @@ const cvDataSlice = createSlice({
       state.experiences.push(action.payload);
     },
     removeExperience(state, action: PayloadAction<string>) {
-      state.experiences = state.experiences.filter((e) => e.id !== action.payload);
+      state.experiences = state.experiences.filter(
+        (e) => e.id !== action.payload
+      );
     },
     setExperiences(state, action: PayloadAction<Experience[]>) {
       state.experiences = action.payload;
@@ -79,7 +81,9 @@ const cvDataSlice = createSlice({
       state.educations.push(action.payload);
     },
     removeEducation(state, action: PayloadAction<string>) {
-      state.educations = state.educations.filter((e) => e.id !== action.payload);
+      state.educations = state.educations.filter(
+        (e) => e.id !== action.payload
+      );
     },
     setEducations(state, action: PayloadAction<Education[]>) {
       state.educations = action.payload;
