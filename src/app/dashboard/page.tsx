@@ -8,7 +8,11 @@ export default function DashboardPage() {
   // usePrivateRoute();
   const router = useRouter();
   const handleCreate = () => {
+<<<<<<< Updated upstream
     router.push("create-resume");
+=======
+    router.push("create-cv");
+>>>>>>> Stashed changes
   };
 
   return (

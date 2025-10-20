@@ -99,7 +99,12 @@ export default function ProfileForm({ profile, setProfile }: Props) {
                   </p>
                   <button
                     onClick={() => handleEdit(key)}
+<<<<<<< Updated upstream
                     className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-700 transition">
+=======
+                    className=" text-blue-600"
+                  >
+>>>>>>> Stashed changes
                     <Pencil className="w-5 h-5" />
                   </button>
                 </>

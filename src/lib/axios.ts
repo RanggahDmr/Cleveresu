@@ -1,3 +1,4 @@
+"use client"
 import axios from "axios";
 
 //  Buat instance axios agar bisa dipakai di semua file

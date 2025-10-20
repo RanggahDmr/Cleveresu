@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "react-hot-toast";
+import { Providers } from "./provider";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"], 
-  variable: "--font-jakarta", 
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-jakarta",
 });
 
 export const metadata: Metadata = {
@@ -18,8 +18,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${jakarta.variable} font-sans`}>
+<<<<<<< Updated upstream
         {children}
       <Toaster position="bottom-right"/>      </body>
+=======
+        <Providers>{children}</Providers>
+      </body>
+>>>>>>> Stashed changes
     </html>
   );
 }
