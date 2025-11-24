@@ -1,4 +1,4 @@
-/* eslint-disable prefer-const */
+
 "use client";
 import { useEffect, useState } from "react";
 import { useCvData } from "@/redux/hooks";
