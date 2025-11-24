@@ -1,15 +1,16 @@
-"use client"
+"use client";
 import axios from "axios";
 
 //  Buat instance axios agar bisa dipakai di semua file
 const api = axios.create({
-  baseURL: "http://localhost:8081/api/v1", // ganti sesuai URL backend tim kamu
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+ // ganti sesuai URL backend tim kamu
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-//  Interceptor optional — otomatis pasang token kalau ada di localStorage
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
