@@ -5,8 +5,9 @@ Cleveresu adalah aplikasi pembuat CV modern yang membantu pengguna membuat **CV 
 ---
 
 ## 📸 Screenshot
+<img width="1904" height="904" alt="cleveresu" src="https://github.com/user-attachments/assets/a3e1a53f-01e7-4c15-90bb-b069cfda50f2" />
 
-![Cleveresu Screenshot](/mnt/data/18056ea8-8084-4e8d-80c6-f31356766ff7.png)
+
 
 
 ---
@@ -31,9 +32,3 @@ Cleveresu adalah aplikasi pembuat CV modern yang membantu pengguna membuat **CV 
 
 ---
 
-## 🚀 Installation
-
-### 1️⃣ Clone Repository
-```bash
-git clone https://github.com/yourusername/cleveresu.git
-cd cleveresu
